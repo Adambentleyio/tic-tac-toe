@@ -31,7 +31,7 @@ const Gameboard = (() => {
     const resetGameboard = () => {
         for (let i = 0; i <  gameboard.length; i++) {
           for (let j = 0; j < gameboard[i].length; j++) {
-            Gameboard.gameboard[i][j] = null;
+            gameboard[i][j] = null;
           }
         }
     }
@@ -210,7 +210,6 @@ const GameController = (() => {
     // Reset game on click
     btnResetGame.addEventListener('click', (event) => {
         event.preventDefault();
-        gameStart = false;
         updateGameboardAndDisplay("reset");
     })
 
@@ -237,13 +236,14 @@ const GameController = (() => {
             // callback to update the gameboard array in the DOM from the controller
             updateGameboardAndDisplay(Gameboard.getGameboard());
             // if there is a winner, display the winner
-            isWinner = checkGameBoardWin() === true ? true : false;
+            isWinner = checkGameBoardWin()
+            console.log(isWinner)
             if (isWinner) {
                 alert(`${players[currentPlayerIndex].name} wins!`)
                 // updateGameboardAndDisplay("reset");
             }
             // if there is a tie, display the tie
-            checkGameBoardWin() === "tie" ? alert("its a tie") : false;
+            // checkGameBoardWin() === "tie" ? alert("its a tie") : false;
             currentPlayerIndex === 0 ? currentPlayerIndex = 1 : currentPlayerIndex = 0;
         }
     }
@@ -257,6 +257,7 @@ const GameController = (() => {
 
             Gameboard.resetGameboard();
             GameDisplay.renderGameboard(Gameboard.getGameboard());
+            console.log(gameStart)
             if (gameStart === true) {
                 GameDisplay.addGameBoardEventListeners();
                 }
@@ -286,56 +287,116 @@ const GameController = (() => {
         let board = Gameboard.getGameboard();
         let howManyInARow = 3;
 
-        // Check for a winner in the rows
-        for (let i = 0; i < board.length; i++) {
-            if (board[i].every(elem => elem !== null)) {
-                for (let j = 0; j < board[i].length - (howManyInARow - 1); j++) {
-                    if (board[i][j] === board[i][j + 1] && board[i][j + 1] === board[i][j + 2]) {
-                      // Winner is in row
-                      return true;
-                    }
-                  }
-            }
+        function checkRowWin(){
+            console.log("checking rows")
 
+            // Check for a winner in the rows
+            for (let i = 0; i < board.length; i++) {
+                if (board[i].every(elem => elem !== null)) {
+                    for (let j = 0; j < board[i].length - (howManyInARow - 1); j++) {
+                        if (board[i][j] === board[i][j + 1] && board[i][j + 1] === board[i][j + 2]) {
+                          // Winner is in row
+                          return true;
+                        }
+                      }
+                }
+            }
         }
 
-        // check each nth array element in each sub array (e.g vertical column) for a winner
-        let winningColumn;
 
-        // Check for a winner in the columns
-        for (let i = 0; i < board.length; i++) {
-          let column = board.map(row => row[i])
-          if (column.every(elem => elem !== null)) {
-              for (let j = 0; j < board[i].length - (howManyInARow - 1); j++) {
-                if (board[j][i] === board[j + 1][i] && board[j + 1][i] === board[j + 2][i]) {
-                  // Winner is in column
-                  return true;
+        function checkColumnWin() {
+            console.log("checking columns")
+
+            // check each nth array element in each sub array (e.g vertical column) for a winner
+            let winningColumn;
+
+            // Check for a winner in the columns
+            for (let i = 0; i < board.length; i++) {
+                let column = board.map(row => row[i])
+                if (column.every(elem => elem !== null)) {
+                    for (let j = 0; j < board[i].length - (howManyInARow - 1); j++) {
+                    if (board[j][i] === board[j + 1][i] && board[j + 1][i] === board[j + 2][i]) {
+                        // Winner is in column
+                        return true;
+                    }
+                    }
                 }
-              }
-          }
+            }
+        }
+
+        function checkDiagonalWin() {
+            // check for a winner in diagonals TOP LEFT to BOTTOM RIGHT
+            console.log("checking diagonals")
+            let diagonalWin1 = true;
+            for (let i = 0; i < board.length; i++) {
+                if (board[i][i] === null) {
+                    diagonalWin1 = false;
+                    break;
+                } else if (board[i][i] !== board[0][0]) {
+                    diagonalWin1 = false;
+                    break;
+                }
+            }
+            console.log({diagonalWin1})
+            if (diagonalWin1) {
+              return true;
+            }
+
+            // check for a winner in diagonals TOP RIGHT to BOTTOM LEFT
+            let diagonalWin2 = true;
+            for (let i = 0; i < board.length; i++) {
+                if (board[i][board.length - 1 - i] === null) {
+                    diagonalWin2 = false;
+                    break;
+                } else if (board[i][board.length - 1 - i] !== board[0][board.length - 1]) {
+                    diagonalWin2 = false;
+                    break;
+                }
+            }
+            console.log({diagonalWin2})
+            if (diagonalWin2) {
+              return true;
+            }
+
+            if (diagonalWin1 || diagonalWin2) {
+              return true;
+            }
         }
 
         // check for tie game
 
-        let isTie = true;
-        for (let i = 0; i < board.length; i++) {
-            for (let j = 0; j < board[i].length; j++) {
-            if (board[i][j] === null) {
-                isTie = false;
+        function checkTieGame() {
+            let isTie = true;
+            for (let i = 0; i < board.length; i++) {
+                for (let j = 0; j < board[i].length; j++) {
+                if (board[i][j] === null) {
+                    isTie = false;
+                    break;
+                }
+                }
+                if (!isTie) {
                 break;
+                }
             }
+            if (isTie) {
+                return "tie";
             }
-            if (!isTie) {
-            break;
-            }
-        }
-        if (isTie) {
-            return "tie";
+
+            return false;
+          };
+
+          const winningFunctions = [checkRowWin, checkColumnWin, checkDiagonalWin, checkTieGame]
+
+          const checkAnyWin = (board) => {
+            for(let winFunc of winningFunctions){
+              if (winFunc(board)) {
+                return true
+              }
+           }
         }
 
-        return false;
-      };
-
+        return checkAnyWin(board)
+    }
 
 
     return {

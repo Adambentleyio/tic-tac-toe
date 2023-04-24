@@ -13,6 +13,17 @@
   --box-size: 150px;
   --box-color: #0a031a;
   --board-size: 3;
+
+  --bg-purple-900: #1f0e4e;
+  --bg-purple-800: #291265;
+  --bg-purple-700: #321d7d;
+  --bg-purple-600: #3b2a96;
+  --bg-purple-500: #4729a0;
+  --bg-purple-400: #5c3da8;
+  --bg-purple-300: #7252b0;
+  --bg-purple-200: #8766b8;
+  --bg-purple-100: #9d7bc0;
+  --bg-purple-50: #b491c9;
 }
 
 body {
@@ -42,7 +53,7 @@ input[type="radio"] {
 
 /* Button styles */
 button {
-  background-color: #2a136a;
+  background-color: var(--bg-purple-700);
   border: none;
   color: #fff;
   padding: 0.5rem 1rem;
@@ -57,8 +68,12 @@ button:disabled {
   cursor: not-allowed;
 }
 
+button.btn-reset {
+  background-color: var(--bg-purple-300);
+}
+
 button:hover {
-  background-color: #1976d2;
+  background-color: var(--bg-purple-900);
 }
 
 .gameboard {
