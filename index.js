@@ -9,6 +9,7 @@
 const Gameboard = (() => {
 
     let gameboard = [];
+    let players = [];
 
     function generateGameboard(boardSize) {
         let newGameboard = [];
@@ -38,19 +39,28 @@ const Gameboard = (() => {
 
     // Controller will call function after creating players to set the players in the gameboard module
     function setPlayers(playerArr) {
-        players = playerArr;
-    }
+        console.log("Setting players")
+        console.log(playerArr)
+        players = playerArr
+        }
 
     function getPlayers() {
         return players;
     }
 
+    let currentPlayerIndex;
+
+    const getCurrentPlayerIndex = () => currentPlayerIndex;
+
+    const setCurrentPlayerIndex = (index) => {
+        currentPlayerIndex = index;
+    }
+
     // add marker to gameboard array
-    const addMarkerToGameboard = (square, currentPlayerIndex) => {
+    const addMarkerToGameboard = (square) => {
         const row = square.dataset.row;
         const col = square.dataset.col;
         gameboard[row][col] = players[currentPlayerIndex].marker;
-
     }
 
     return {
@@ -59,6 +69,8 @@ const Gameboard = (() => {
         newGameboard,
         setPlayers,
         players,
+        getCurrentPlayerIndex,
+        setCurrentPlayerIndex,
         addMarkerToGameboard,
         resetGameboard,
         getPlayers,
@@ -102,10 +114,11 @@ const GameDisplay = (() => {
 
         const squares = document.querySelectorAll('.square');
 
-        squares.forEach((square, idx) => square.addEventListener('click', (event) => {
+        squares.forEach((square, idx) => square.addEventListener('click', function handleClick(event) {
             square.id = idx;
             console.log('square ' + square.id + ' clicked');
             GameController.handleClickedSquare(square)
+            // square.removeEventListener('click', handleClick)
         }))
     }
 
@@ -163,67 +176,70 @@ const GameController = (() => {
 
     let boardSizeInput;
     let players = []
-    let currentPlayerIndex;
     let gameOver;
     let gameStart = false;
-
-    console.log(gameStart)
-
-    // Game setup form. 1. set object to hold form elements. 2. add event listener to form
-    // 3. set object with form inputs and values. 4. submit handler to update gameboard state.
+    let playerOneMark = 'X';
 
     const gameSetupForm = document.querySelector('#players');
+    const markerOptions = document.querySelector('.container-marker-option');
+    const markerButtons = markerOptions.querySelectorAll('button');
+
+    for (let i = 0; i < markerButtons.length; i++) {
+        markerButtons[i].addEventListener('click', function() {
+            toggleActiveButton(this.id);
+        })
+    }
+
+    function toggleActiveButton(buttonId) {
+        for (let i = 0; i < markerButtons.length; i++) {
+            if (markerButtons[i].id === buttonId) {
+                markerButtons[i].classList.add('active');
+                playerOneMark = markerButtons[i].textContent.trim();
+            } else {
+                markerButtons[i].classList.remove('active')
+            }
+        }
+    }
+
     // set event listener on each form element
     gameSetupForm.addEventListener('input', (event) => {
-        // event.preventDefault();
-        // console.log(event.target.value)
-        // console.log sibling elements data attribute "board-size"
-        console.log(event.target.previousElementSibling.dataset.boardSize)
-        boardSizeInput = parseInt(event.target.previousElementSibling.dataset.boardSize);
-        console.log(typeof boardSizeInput)
+
+    console.log(event.target.previousElementSibling.dataset.boardSize)
+    boardSizeInput = parseInt(event.target.previousElementSibling.dataset.boardSize);
+    console.log(typeof boardSizeInput)
     })
-
-    console.log(gameSetupForm)
-
 
     // Game btns setup
     const btnStart = document.querySelector('#btn-start');
     const btnResetGame = document.querySelector('#btn-reset');
-
-    // const btnGenerateBoard = document.querySelector('#generate-board');
-    // // Render board on click
-    // btnGenerateBoard.addEventListener('click', (event) => {
-    //     event.preventDefault();
-    //     // if board is already rendered, remove it and add new one
-    //     updateGameboardAndDisplay();
-    // })
 
     // Start game on click.
     btnStart.addEventListener('click', (event) => {
         event.preventDefault();
         gameStart = true;
         // gameStart ? GameDisplay.removeDOMElement('#players') : '';
-        updateGameboardAndDisplay(boardSizeInput);
+        Gameboard.newGameboard();
+        console.log(Gameboard.getGameboard())
+        GameDisplay.renderGameboard(Gameboard.getGameboard());
+        GameDisplay.addGameBoardEventListeners();
         startGame();
     })
 
     // Reset game on click
     btnResetGame.addEventListener('click', (event) => {
         event.preventDefault();
-        updateGameboardAndDisplay("reset");
+        resetGameboardAndDisplay();
     })
 
     // Start game and create players
 
     const startGame = () => {
         players = [
-            Player(document.querySelector('#player1-name').value || 'Player 1', 'X'),
-            Player(document.querySelector('#player2-name').value || 'Player 2', 'O')
+            Player('Player 1', playerOneMark),
+            Player('Player 2', playerOneMark === 'X' ? 'O' : 'X')
         ]
-
         Gameboard.setPlayers(players);
-
-        currentPlayerIndex = 0;
+        Gameboard.setCurrentPlayerIndex(playerOneMark === 'X' ? 0 : 1);
         gameOver = false;
     }
 
@@ -231,50 +247,43 @@ const GameController = (() => {
     const handleClickedSquare = (square) => {
         if (gameStart && !gameOver) {
             let isWinner = false;
-            // call function to add marker to gameboard array
-            Gameboard.addMarkerToGameboard(square, currentPlayerIndex);
-            // callback to update the gameboard array in the DOM from the controller
-            updateGameboardAndDisplay(Gameboard.getGameboard());
-            // if there is a winner, display the winner
+            let currentPlayerIndex = Gameboard.getCurrentPlayerIndex();
+            let players = Gameboard.getPlayers();
+            let winningPlayer = players[currentPlayerIndex].name
+
+            if (!square.classList.contains('played')) {
+
+            Gameboard.addMarkerToGameboard(square);
+            updateSquareOnDisplay(Gameboard.getGameboard(), square);
+            square.classList.add('played')
             isWinner = checkGameBoardWin()
-            console.log(isWinner)
             if (isWinner) {
-                alert(`${players[currentPlayerIndex].name} wins!`)
-                // updateGameboardAndDisplay("reset");
+                alert(`${winningPlayer} wins!`)
             }
-            // if there is a tie, display the tie
-            // checkGameBoardWin() === "tie" ? alert("its a tie") : false;
-            currentPlayerIndex === 0 ? currentPlayerIndex = 1 : currentPlayerIndex = 0;
+            checkGameBoardWin() === "tie" ? alert("its a tie") : false;
+            Gameboard.setCurrentPlayerIndex(Gameboard.getCurrentPlayerIndex() === 0 ? 1 : 0);
+            }
         }
     }
 
-    const updateGameboardAndDisplay = (action = 3) => {
-        console.log({action})
-        // update the gameboard array in the DOM
-        if (action === "reset") {
-
-            console.log("resetting gameboard")
-
-            Gameboard.resetGameboard();
-            GameDisplay.renderGameboard(Gameboard.getGameboard());
-            console.log(gameStart)
-            if (gameStart === true) {
-                GameDisplay.addGameBoardEventListeners();
-                }
-            }
-
-        if (typeof action === "number") {
-            console.log("action is a number")
-            Gameboard.newGameboard(action);
-            console.log(Gameboard.getGameboard())
-            GameDisplay.renderGameboard(Gameboard.getGameboard());
-            GameDisplay.addGameBoardEventListeners();
+    const updateSquareOnDisplay = (gameboard, square) => {
+        let row, col;
+        if (square.classList.contains('played')) {
+            return;
         }
+        if (square.dataset.row && square.dataset.col) {
+          row = square.dataset.row;
+          col = square.dataset.col;
+          let marker = gameboard[row][col];
+          square.textContent = marker;
+        }
+      };
 
+      const resetGameboardAndDisplay = () => {
+        Gameboard.resetGameboard();
         GameDisplay.renderGameboard(Gameboard.getGameboard());
-
+        console.log(gameStart)
         if (gameStart === true) {
-            console.log("game has started. Setting event listeners")
             GameDisplay.addGameBoardEventListeners();
         }
     }
@@ -400,6 +409,6 @@ const GameController = (() => {
 
 
     return {
-        gameStart, handleClickedSquare, updateGameboardAndDisplay
+        gameStart, handleClickedSquare,
     }
 })();

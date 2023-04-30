@@ -17,7 +17,14 @@
         <!-- <input type="radio" id="generate-board">Generate 3 by 3 board</input> -->
 
         <fieldset>
-          <label for="player1">Player 1</label>
+          <span>Pick Player 1's Mark</span>
+          <div class="container-marker-option">
+            <button type="button" id="x-btn" class="marker-option active">
+              X
+            </button>
+            <button type="button" id="o-btn" class="marker-option">O</button>
+          </div>
+          <!-- <label for="player1">Player 1</label>
           <input
             type="text"
             id="player1-name"
@@ -30,7 +37,7 @@
             id="player2-name"
             name="player2"
             placeholder="Enter name"
-          />
+          /> -->
         </fieldset>
         <!-- <fieldset class="form-board-size">
           <div class="form-group">
