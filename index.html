@@ -17,7 +17,7 @@
         <!-- <input type="radio" id="generate-board">Generate 3 by 3 board</input> -->
 
         <fieldset>
-          <span>Pick Player 1's Mark</span>
+          <h2>Pick Player 1's Mark</h2>
           <div class="container-marker-option">
             <button type="button" id="x-btn" class="marker-option active">
               X
@@ -59,10 +59,20 @@
         </div>
       </form>
     </div>
-    <div class="gameboard" id="gameboard"></div>
-    <div id="game-info">
-      <div id="board-arr"></div>
+    <div id="game">
+      <div id="game-info-box" class="hide">
+        <h2>Game in Progress</h2>
+        <div class="game-info-box__content">
+          <div id="player-scores"></div>
+          <div id="player-turn"></div>
+          <button class="reset-game">Reset</button>
+        </div>
+      </div>
+      <div class="gameboard" id="gameboard"></div>
+      <div class="game-result-message">
+        <h2></h2>
+        <button id="reset-win">Play again</button>
+      </div>
     </div>
-    <div class="winning-message"></div>
   </body>
 </html>

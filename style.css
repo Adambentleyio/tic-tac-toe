@@ -1,5 +1,6 @@
-/* import cool google font
- */
+
+
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&display=swap");
 
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap");
 
@@ -7,11 +8,15 @@
 ::before,
 ::after {
   box-sizing: border-box;
+  font-family: "Fira Code";
+  margin: 0;
+  padding: 0;
+  /* outline: 1px solid lime; */
 }
 
 :root {
-  --box-size: 150px;
-  --box-color: #0a031a;
+  --box-size: 8rem;
+  --box-color: #1f1f1f;
   --board-size: 3;
 
   --bg-purple-900: #1f0e4e;
@@ -24,16 +29,25 @@
   --bg-purple-200: #8766b8;
   --bg-purple-100: #9d7bc0;
   --bg-purple-50: #b491c9;
+
+  --btn-bg: var(--bg-purple-200);
+  --btn-color-invert: #fff;
 }
 
 body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  /* justify-content: center; */
+  justify-content: center;
   align-items: center;
   background: #f5f5f5;
-  font-family: "Roboto", sans-serif;
+  font-family: "Fira Code", sans-serif;
+  background: black;
+}
+
+h2, h3, h4 {
+  font-family: "Fira Code", sans-serif;
+  font-size: 2.1em;
 }
 
 input {
@@ -53,13 +67,17 @@ input[type="radio"] {
 
 /* Button styles */
 button {
-  background-color: #222;
-  border: none;
+  border: 2px solid var(--box-color);
   color: #fff;
-  padding: 0.5rem 1rem;
+  background: transparent;
+  font-size: 1.2em;
+  padding: 1rem 1rem;
   border-radius: 0.25rem;
   cursor: pointer;
-  transition: background-color 0.3s ease-in-out;
+}
+
+button.primary {
+  background-color: var(--bg-purple-500);
 }
 
 //style disabled buttons
@@ -71,14 +89,20 @@ button:disabled {
 button.btn-reset {
   /* background-color: var(--bg-purple-300); */
   background-color: #7a7a7a;
+  color: #fff;
+
 }
 
 button:hover {
-  /* background-color: var(--bg-purple-900); */
-  background-color: #999;
+  opacity: 0.7;
 }
 
 /* Controls */
+
+.controls {
+  width: 75%;
+  max-width: 900px;
+}
 
 .control-button-group {
   width: 100%;
@@ -86,32 +110,45 @@ button:hover {
 
 .control-button-group button {
   width: 100%;
-  margin: 0.5rem 0;
+  margin: 0.5rem auto;
+  font-family: "Fira Code";
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
 }
 
+.container {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  background: var(--box-color);
+  color: #d3d3d3;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.25rem;
+  border-radius: 20px;
+  gap: 2px;
+}
+
 .container-marker-option {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem;
-  background: #222;
-  width: 13rem;
+  padding: 0.5rem;
+  background: var(--box-color);
   border-radius: 20px;
   gap: 2px;
 }
 
 .container-marker-option button {
-  border-radius: 20px;
-  /* fill available space */
+  border-radius: 10px;
   flex-grow: 1;
-  background: #222;
+  background: var(--box-color);
   color: #aaa;
 }
 
 .container-marker-option button.active {
   background: #aaa;
-  color: #222;
+  color: var(--box-color);
 }
 
 .container-marker-option button:not(.active):hover {
@@ -121,11 +158,14 @@ button:hover {
 
 .gameboard {
   display: grid;
-  grid-template-columns: repeat(var(--board-size), 1fr);
-  align-items: center;
+  position: relative;
+  grid-template-columns: repeat(3, 1fr);
+  height: 406px
+  align-items: start;
   justify-items: center;
-  gap: 1px;
-  margin: 1rem 0;
+  gap: 5px;
+  grid-gap: 20px;
+  margin: 20px auto;
 }
 
 .square {
@@ -136,8 +176,19 @@ button:hover {
   justify-content: center;
   align-items: center;
   font-size: clamp(1rem, 6vw, 3rem);
-  color: #fff;
-  font-family: sans-serif;
+  font-weight: 700;
+  color: var(--bg-purple-300);
+  box-shadow: 0.2rem 0.2rem 0 var(--bg-purple-100);
+  border-top: 2px solid var(--bg-purple-100);
+  border-left: 2px solid var(--bg-purple-100);
+}
+
+/* resize square on mobiles by udating --box-size */
+
+@media (max-width: 600px) {
+  :root {
+    --box-size: calc(80vw / var(--board-size));
+  }
 }
 
 .square:hover {
@@ -173,6 +224,7 @@ form fieldset {
 fieldset {
   border: none;
   padding: 0;
+  width: 100%;
 }
 
 .form-group {
@@ -182,9 +234,55 @@ fieldset {
   align-items: center;
 }
 
-.controls {
+.controls form {
   display: flex;
   gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+#game {
+  /* width: clamp(20rem, 70%, 40rem); */
+  max-width: 508px;
+}
+
+#game-info-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.5rem 0;
+  color: var(--bg-purple-200);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  border: 5px solid var(--box-color);
+  /* background-color: #111; */
+}
+
+.game-info-box__content {
+  display: flex;
+  width: 100%;
+  margin-top: 1.5rem;
+  flex-direction: row;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+ #player-turn {
+  font-size: 1.6rem;
+  color: #ddd;
+}
+
+#game-info-box button {
+  padding: .5rem;
+  font-size: 1rem;
+  border: 3px solid var(--bg-purple-200);
+  color: var(--bg-purple-200);
 }
 
 .form-board-size {
@@ -199,4 +297,38 @@ fieldset {
   justify-content: center;
   gap: 0.5rem;
   margin-right: 1.75rem;
+}
+
+.game-result-message {
+  position: fixed;
+  overflow: hidden;
+  display: none;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000ee;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  z-index: 1;
+}
+
+.game-result-message.show {
+  display: flex;
+  flex-direction: column;
+}
+
+form.hide {
+  display: none;
+}
+
+#game-info-box.hide {
+  display: none;
+}
+
+.winner {
+  color: var(--bg-purple-900);
 }

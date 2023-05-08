@@ -10,6 +10,8 @@ const Gameboard = (() => {
 
     let gameboard = [];
     let players = [];
+    let currentPlayerIndex;
+    let playerScores = [0, 0];
 
     function generateGameboard(boardSize) {
         let newGameboard = [];
@@ -37,6 +39,14 @@ const Gameboard = (() => {
         }
     }
 
+    function addScore(playerIndex) {
+        playerScores[playerIndex]++;
+    }
+
+    function getScores() {
+        return playerScores;
+    }
+
     // Controller will call function after creating players to set the players in the gameboard module
     function setPlayers(playerArr) {
         console.log("Setting players")
@@ -47,8 +57,6 @@ const Gameboard = (() => {
     function getPlayers() {
         return players;
     }
-
-    let currentPlayerIndex;
 
     const getCurrentPlayerIndex = () => currentPlayerIndex;
 
@@ -63,10 +71,23 @@ const Gameboard = (() => {
         gameboard[row][col] = players[currentPlayerIndex].marker;
     }
 
+    const getCurrentGameInfo = () => {
+        return {
+            currentPlayer: players[currentPlayerIndex].name,
+            currentMarker: players[currentPlayerIndex].marker,
+            currentPlayerIndex: currentPlayerIndex,
+            nextPlayerIndex: currentPlayerIndex + 1 === players.length ? 0 : currentPlayerIndex + 1,
+            players: players,
+            playerScores: playerScores,
+        }
+    }
+
     return {
         gameboard,
         getGameboard,
         newGameboard,
+        addScore,
+        getScores,
         setPlayers,
         players,
         getCurrentPlayerIndex,
@@ -74,7 +95,8 @@ const Gameboard = (() => {
         addMarkerToGameboard,
         resetGameboard,
         getPlayers,
-        generateGameboard
+        generateGameboard,
+        getCurrentGameInfo,
     }
 })();
 
@@ -108,25 +130,56 @@ const GameDisplay = (() => {
         }
     }
 
-    // add event listeners to the gameboard squares
+    function createPlayerScores(node, gameInfo) {
 
-    const addGameBoardEventListeners = () => {
+        let p1ScoreNode = document.createElement('p');
+        let p2ScoreNode = document.createElement('p');
 
-        const squares = document.querySelectorAll('.square');
-
-        squares.forEach((square, idx) => square.addEventListener('click', function handleClick(event) {
-            square.id = idx;
-            console.log('square ' + square.id + ' clicked');
-            GameController.handleClickedSquare(square)
-            // square.removeEventListener('click', handleClick)
-        }))
+        p1ScoreNode.textContent = `P1: ${gameInfo.playerScores[0]}`;
+        p2ScoreNode.textContent = `P2: ${gameInfo.playerScores[1]}`;
+        node.appendChild(p1ScoreNode), node.appendChild(p2ScoreNode);
     }
 
-    // display each sub array in the gameboard array in the DOM
-    const displayGameDataArray = (boardArray) => {
+    function updatePlayerScores(node, gameInfo) {
+        // send scores to DOM and where to attach them
+        // create element for each player score
+        let [ p1Score, p2Score ] = gameInfo.playerScores;
+        // insert score into first child of node
+        node.children[0].textContent = `P1: ${p1Score}`;
+        node.children[1].textContent = `P2: ${p2Score}`;
 
-        const boardArr = document.getElementById('board-arr');
-        boardArray.length === 0 ? boardArr.innerHTML = `<p>No moves played</p>` : boardArray.forEach((row) => boardArr.innerHTML += `<p>${row}</p>`)
+
+    }
+
+    const updateSquareOnDisplay = (marker, square) => {
+        let row, col;
+        if (square.classList.contains('played')) {
+            return;
+        }
+        if (square.dataset.row && square.dataset.col) {
+          row = square.dataset.row;
+          col = square.dataset.col;
+          square.textContent = marker;
+        }
+      };
+
+    // display the winning message div in the DOM
+    const displayGameResultMessage = (winner = null, tie = false) => {
+        const gameResultMessage = document.querySelector('.game-result-message');
+        if (winner) {
+            gameResultMessage.classList.add('show');
+            gameResultMessage.querySelector('h2').textContent = `${winner} wins!`;
+        }
+        if (tie) {
+            gameResultMessage.classList.add('show');
+            gameResultMessage.querySelector('h2').textContent = `It's a tie!`;
+        }
+    }
+
+    // remove class from particular element
+
+    const removeClass = (node, className) => {
+            node.classList.remove(className)
     }
 
     // remove a given element from the DOM
@@ -137,10 +190,13 @@ const GameDisplay = (() => {
     }
 
     return {
-        displayGameDataArray,
+        updateSquareOnDisplay,
+        createPlayerScores,
+        updatePlayerScores,
+        displayGameResultMessage,
+        removeClass,
         removeDOMElement,
         renderGameboard,
-        addGameBoardEventListeners
     }
 
 })();
@@ -176,13 +232,26 @@ const GameController = (() => {
 
     let boardSizeInput;
     let players = []
-    let gameOver;
+    let gameInProgress = false;
     let gameStart = false;
     let playerOneMark = 'X';
+
+    // Game play setup
 
     const gameSetupForm = document.querySelector('#players');
     const markerOptions = document.querySelector('.container-marker-option');
     const markerButtons = markerOptions.querySelectorAll('button');
+    const gameInfo = document.querySelector('#game-info-box');
+    const playerTurnDisplay = gameInfo.querySelector('#player-turn');
+    const playerScoresDisplay = gameInfo.querySelector('#player-scores');
+
+    // Game play btns setup
+    const btnStart = document.querySelector('#btn-start');
+    const btnResetGame = document.querySelector('#btn-reset');
+    const winningReset = document.querySelector('#reset-win');
+    const btnResetInGame = gameInfo.querySelector('.reset-game');
+
+    // Changing player marker setup
 
     for (let i = 0; i < markerButtons.length; i++) {
         markerButtons[i].addEventListener('click', function() {
@@ -201,92 +270,116 @@ const GameController = (() => {
         }
     }
 
-    // set event listener on each form element
-    gameSetupForm.addEventListener('input', (event) => {
 
-    console.log(event.target.previousElementSibling.dataset.boardSize)
+    // Event listeners
+
+    // Set event listener on form element for user input of gameboard size
+
+    gameSetupForm.addEventListener('input', (event) => {
     boardSizeInput = parseInt(event.target.previousElementSibling.dataset.boardSize);
     console.log(typeof boardSizeInput)
     })
 
-    // Game btns setup
-    const btnStart = document.querySelector('#btn-start');
-    const btnResetGame = document.querySelector('#btn-reset');
-
     // Start game on click.
+
     btnStart.addEventListener('click', (event) => {
         event.preventDefault();
-        gameStart = true;
-        // gameStart ? GameDisplay.removeDOMElement('#players') : '';
+        gameInProgress = true;
         Gameboard.newGameboard();
         console.log(Gameboard.getGameboard())
         GameDisplay.renderGameboard(Gameboard.getGameboard());
-        GameDisplay.addGameBoardEventListeners();
+        addGameBoardEventListeners();
+        GameDisplay.removeClass(gameInfo, 'hide');
         startGame();
     })
 
     // Reset game on click
+
     btnResetGame.addEventListener('click', (event) => {
         event.preventDefault();
         resetGameboardAndDisplay();
     })
 
-    // Start game and create players
+    btnResetInGame.addEventListener('click', (event) => {
+        event.preventDefault();
+        resetGameboardAndDisplay();
+    })
 
-    const startGame = () => {
+    // Reset game on click of winning message
+
+    winningReset.addEventListener('click', (event) => {
+        event.preventDefault();
+        gameInProgress = true;
+        resetGameboardAndDisplay();
+        GameDisplay.removeClass(winningReset.parentNode, 'show');
+    })
+
+     // Start game callback that creates and sets player info in gameboard module
+
+     const startGame = () => {
         players = [
             Player('Player 1', playerOneMark),
             Player('Player 2', playerOneMark === 'X' ? 'O' : 'X')
         ]
         Gameboard.setPlayers(players);
         Gameboard.setCurrentPlayerIndex(playerOneMark === 'X' ? 0 : 1);
-        gameOver = false;
+        gameSetupForm.classList.add('hide');
+        playerTurnDisplay.textContent = `${Gameboard.getCurrentGameInfo().currentMarker} turn`;
+        GameDisplay.createPlayerScores(playerScoresDisplay, Gameboard.getCurrentGameInfo());
+    }
+
+    // Event listener for gameboard squares
+
+    const addGameBoardEventListeners = () => {
+        const squares = document.querySelectorAll('.square');
+        squares.forEach((square, idx) => square.addEventListener('click', function handleClick(event) {
+            square.id = idx;
+            handleClickedSquare(square)
+        }))
     }
 
     // Handle click event on gameboard squares
+
     const handleClickedSquare = (square) => {
-        if (gameStart && !gameOver) {
-            let isWinner = false;
-            let currentPlayerIndex = Gameboard.getCurrentPlayerIndex();
-            let players = Gameboard.getPlayers();
-            let winningPlayer = players[currentPlayerIndex].name
+        if (gameInProgress) {
+
+            let {currentPlayer, currentMarker, nextPlayerIndex, currentPlayerIndex} = Gameboard.getCurrentGameInfo()
+            let winningPlayer = currentPlayer
 
             if (!square.classList.contains('played')) {
 
-            Gameboard.addMarkerToGameboard(square);
-            updateSquareOnDisplay(Gameboard.getGameboard(), square);
-            square.classList.add('played')
-            isWinner = checkGameBoardWin()
-            if (isWinner) {
-                alert(`${winningPlayer} wins!`)
-            }
-            checkGameBoardWin() === "tie" ? alert("its a tie") : false;
-            Gameboard.setCurrentPlayerIndex(Gameboard.getCurrentPlayerIndex() === 0 ? 1 : 0);
+                Gameboard.addMarkerToGameboard(square);
+                GameDisplay.updateSquareOnDisplay(currentMarker, square);
+
+                gameResult = checkGameBoardWin();
+                console.log(gameResult)
+                if (gameResult.winner) {
+                    // alert(`${winningPlayer} wins!`)
+                    gameInProgress = false;
+                    GameDisplay.displayGameResultMessage(winningPlayer);
+                    Gameboard.addScore(currentPlayerIndex);
+                    GameDisplay.updatePlayerScores(playerScoresDisplay, Gameboard.getCurrentGameInfo());
+                } if (gameResult.tie) {
+                    gameInProgress = false;
+                    GameDisplay.displayGameResultMessage(null, true);
+                }
+
+                // checkGameBoardWin() === "tie" ? alert("its a tie") : false;
+                square.classList.add('played')
+                Gameboard.setCurrentPlayerIndex(nextPlayerIndex);
+                console.log(playerTurnDisplay)
+                playerTurnDisplay.textContent = `${Gameboard.getCurrentGameInfo().currentMarker} turn`;
             }
         }
     }
-
-    const updateSquareOnDisplay = (gameboard, square) => {
-        let row, col;
-        if (square.classList.contains('played')) {
-            return;
-        }
-        if (square.dataset.row && square.dataset.col) {
-          row = square.dataset.row;
-          col = square.dataset.col;
-          let marker = gameboard[row][col];
-          square.textContent = marker;
-        }
-      };
 
       const resetGameboardAndDisplay = () => {
+        if (gameInProgress === true) {
         Gameboard.resetGameboard();
         GameDisplay.renderGameboard(Gameboard.getGameboard());
-        console.log(gameStart)
-        if (gameStart === true) {
-            GameDisplay.addGameBoardEventListeners();
-        }
+        addGameBoardEventListeners();
     }
+}
 
     // Check for winning move OR tie
 
@@ -394,19 +487,25 @@ const GameController = (() => {
             return false;
           };
 
-          const winningFunctions = [checkRowWin, checkColumnWin, checkDiagonalWin, checkTieGame]
+          const winningFunctions = [checkRowWin, checkColumnWin, checkDiagonalWin]
 
           const checkAnyWin = (board) => {
             for(let winFunc of winningFunctions){
-              if (winFunc(board)) {
-                return true
+              const winner = winFunc(board)
+              if (winner) {
+                return {winner}
               }
            }
-        }
+           const isTie = checkTieGame();
+              if (isTie) {
+                return {tie: true}
+            }
 
-        return checkAnyWin(board)
+            return {winner: null}
     }
 
+    return checkAnyWin(board)
+    }
 
     return {
         gameStart, handleClickedSquare,
